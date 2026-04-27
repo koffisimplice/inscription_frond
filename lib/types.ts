@@ -86,6 +86,9 @@ export interface Eleve {
     adressePostale: string;
     telephone: string;
     photoUrl?: string;
+    // ✅ AJOUTS ICI
+    parents?: Parent[];
+    tuteur?: Tuteur;
     inscriptions?: Inscription[];
 }
 
