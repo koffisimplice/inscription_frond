@@ -86,6 +86,7 @@ export interface Eleve {
     adressePostale: string;
     telephone: string;
     photoUrl?: string;
+    inscriptions?: Inscription[];
 }
 
 export interface Inscription {
