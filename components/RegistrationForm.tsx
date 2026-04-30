@@ -144,24 +144,39 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
     const startCamera = async () => {
         setShowCamera(true);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            if (videoRef.current) videoRef.current.srcObject = stream;
-        } catch { setShowCamera(false); alert("Caméra indisponible"); }
-    };
-
-    const takePhoto = () => {
-        if (videoRef.current && canvasRef.current) {
-            const ctx = canvasRef.current.getContext('2d');
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
-            ctx?.drawImage(videoRef.current, 0, 0);
-            setFormData(prev => ({ ...prev, eleve: { ...prev.eleve, photoUrl: canvasRef.current?.toDataURL('image/jpeg') || '' } }));
-            stopCamera();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+            });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+            }
+        } catch (err) {
+            setShowCamera(false);
+            alert('Caméra indisponible. Vérifiez que vous avez autorisé l\'accès à la caméra dans votre navigateur.');
         }
     };
 
+    const takePhoto = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        const video = videoRef.current;
+        // Attendre que la vidéo soit prête
+        const width = video.videoWidth || 640;
+        const height = video.videoHeight || 480;
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+        const ctx = canvasRef.current.getContext('2d');
+        ctx?.drawImage(video, 0, 0, width, height);
+        const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.92);
+        setFormData(prev => ({ ...prev, eleve: { ...prev.eleve, photoUrl: dataUrl } }));
+        stopCamera();
+    };
+
     const stopCamera = () => {
-        if (videoRef.current?.srcObject) (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+            videoRef.current.srcObject = null;
+        }
         setShowCamera(false);
     };
 
@@ -249,11 +264,29 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
                     </h2>
                 </div>
                 
-                <div className="flex gap-3 mt-8 overflow-x-auto pb-2 scrollbar-hide relative z-10">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <button key={`tab-head-${i}`} type="button" onClick={() => goToStep(i)} className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shrink-0 ${step === i ? 'bg-emerald-600 text-white shadow-xl scale-105' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                            <span className={`w-5 h-5 rounded-full flex items-center justify-center ${step === i ? 'bg-white text-emerald-600' : 'bg-slate-100'}`}>{i}</span>
-                            ÉTAPE {i}
+                {/* Step Tabs — compact on mobile, full label on sm+ */}
+                <div className="flex gap-2 mt-6 md:mt-8 overflow-x-auto pb-2 scrollbar-hide relative z-10">
+                    {[
+                        { n: 1, label: 'Identité' },
+                        { n: 2, label: 'Parents' },
+                        { n: 3, label: 'Tuteur' },
+                        { n: 4, label: 'Scolarité' },
+                        { n: 5, label: 'Paiement' },
+                    ].map(({ n, label }) => (
+                        <button
+                            key={`tab-head-${n}`}
+                            type="button"
+                            onClick={() => goToStep(n)}
+                            className={`flex items-center gap-2 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shrink-0 ${
+                                step === n
+                                    ? 'bg-emerald-600 text-white shadow-xl scale-105 px-3 sm:px-5 py-3'
+                                    : 'bg-white text-slate-400 border border-slate-200 px-3 sm:px-5 py-3'
+                            }`}
+                        >
+                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                                step === n ? 'bg-white text-emerald-600' : 'bg-slate-100 text-slate-500'
+                            }`}>{n}</span>
+                            <span className="hidden sm:inline">{label}</span>
                         </button>
                     ))}
                 </div>
@@ -285,7 +318,7 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
 
                             <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-8">
                                 <h3 className="text-xl font-black text-slate-800 uppercase flex items-center gap-4">
-                                    <span className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-lg shadow-sm border border-blue-100">📅</span>
+                                    <span className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-lg shadow-sm border border-teal-100">📅</span>
                                     Naissance & Acte civil
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
@@ -321,24 +354,34 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
                                         )}
                                         {showCamera && (
                                             <div className="absolute inset-0 z-20 bg-black">
-                                                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-6 inset-x-0 flex flex-col items-center gap-3 px-4">
-                                                    <button type="button" onClick={takePhoto} className="w-full bg-emerald-600 text-white py-3 rounded-xl shadow-2xl font-black text-xs uppercase">Capturer</button>
-                                                    <button type="button" onClick={stopCamera} className="text-white text-[10px] uppercase font-black opacity-60 hover:opacity-100">Annuler</button>
+                                                <video
+                                                    ref={videoRef}
+                                                    autoPlay
+                                                    playsInline
+                                                    muted
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute bottom-4 inset-x-0 flex flex-col items-center gap-2 px-4">
+                                                    <button type="button" onClick={takePhoto} className="w-full bg-emerald-500 text-white py-2.5 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 active:scale-95 transition-all">
+                                                        📸 Capturer
+                                                    </button>
+                                                    <button type="button" onClick={stopCamera} className="text-white text-[9px] uppercase font-black opacity-50 hover:opacity-100 transition-opacity">
+                                                        Annuler
+                                                    </button>
                                                 </div>
                                             </div>
                                         )}
                                         {showQrCode && (
                                             <div className="absolute inset-0 z-20 bg-white/95 flex flex-col items-center justify-center p-4 text-center animate-in zoom-in-95">
                                                 <div className="bg-white p-3 rounded-2xl shadow-xl border border-slate-100 mb-4"><QRCodeSVG value={mobileUrl} size={140} /></div>
-                                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest animate-pulse leading-tight">Scannez pour<br/>capturer</p>
+                                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-pulse leading-tight">Scannez pour<br/>capturer</p>
                                                 <button type="button" onClick={() => setShowQrCode(false)} className="text-rose-500 mt-4 text-[9px] font-black uppercase hover:underline tracking-widest">Annuler</button>
                                             </div>
                                         )}
                                     </div>
                                     <div className="grid grid-cols-1 w-full gap-3 mt-8">
-                                        <button type="button" onClick={startMobilePhotoSession} className="w-full py-4 bg-blue-50 text-blue-600 rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all">📱 Smartphone</button>
-                                        <button type="button" onClick={startCamera} className="w-full py-4 bg-slate-900 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all">💻 Webcam</button>
+                                        <button type="button" onClick={startMobilePhotoSession} className="w-full py-4 bg-emerald-50 text-emerald-700 rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all">📱 Smartphone</button>
+                                        <button type="button" onClick={startCamera} className="w-full py-4 bg-emerald-900 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-emerald-800 transition-all">💻 Webcam</button>
                                         <label className="w-full py-4 bg-white border border-slate-200 rounded-[20px] font-black text-[10px] uppercase text-center cursor-pointer hover:bg-slate-50 transition-all">📁 Fichier<input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} /></label>
                                     </div>
                                 </div>
@@ -370,7 +413,7 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
                     <div key="step-container-3" className="max-w-3xl mx-auto animate-in slide-in-from-right duration-500">
                         <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-sm space-y-8">
                             <h3 className="text-xl font-black text-slate-800 uppercase flex items-center gap-4">
-                                <span className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl border border-blue-100 shadow-sm">🏠</span>
+                                <span className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl border border-emerald-100 shadow-sm">🏠</span>
                                 Tuteur Légal
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -451,7 +494,7 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
 
                         <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-sm space-y-10">
                             <h3 className="text-xl font-black text-slate-800 uppercase flex items-center gap-4">
-                                <span className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl border border-blue-100 shadow-sm">📄</span>
+                                <span className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl border border-emerald-100 shadow-sm">📄</span>
                                 Pièces du Dossier
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -476,7 +519,7 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
                                 key="btn-quick-save" 
                                 type="button" 
                                 onClick={(e) => { setStep(5); setTimeout(() => handleSubmit(e as any), 100); }} 
-                                className="px-8 py-4 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                className="px-8 py-4 bg-teal-50 text-teal-700 border border-teal-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-teal-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
                             >
                                 💾 Sauvegarder & Quitter
                             </button>
@@ -563,9 +606,9 @@ function FormInput({ label, onChange, value, ...props }: any) {
 
 function DocToggle({ label, active, onClick }: any) {
     return (
-        <button type="button" onClick={onClick} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${active ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+        <button type="button" onClick={onClick} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${active ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
             <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-            <div className={`w-10 h-5 rounded-full relative ${active ? 'bg-blue-500' : 'bg-slate-300'}`}>
+            <div className={`w-10 h-5 rounded-full relative ${active ? 'bg-emerald-500' : 'bg-slate-300'}`}>
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${active ? 'right-1' : 'left-1'}`} />
             </div>
         </button>

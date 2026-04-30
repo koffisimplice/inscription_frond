@@ -56,14 +56,6 @@ export default function DashboardLayout({
     return (
         <div className="min-h-screen bg-[#f8fafc] flex overflow-hidden font-sans">
             
-            {/* Mobile Menu Toggle */}
-            <button 
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden fixed top-6 right-6 z-50 p-4 bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl shadow-2xl active:scale-95 transition-transform"
-            >
-                {isSidebarOpen ? '✖️' : '☰'}
-            </button>
-
             {/* Sidebar - Changed to Emerald Black */}
             <aside className={`
                 fixed inset-y-0 left-0 z-40 w-72 bg-[#050a09] text-white p-6 transform transition-transform duration-500 ease-in-out lg:relative lg:translate-x-0 border-r border-white/5
@@ -135,16 +127,25 @@ export default function DashboardLayout({
             )}
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+            <main className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
                 {/* Header / Top Bar styled with color */}
-                <header className="h-20 bg-gradient-to-r from-[#064e3b] to-[#0d9488] border-b border-emerald-900/50 flex items-center justify-between px-8 md:px-12 z-20 sticky top-0 shadow-lg shadow-emerald-950/20">
-                    <div className="relative">
-                        <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mt-16 blur-2xl" />
-                        <h2 className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] relative z-10">
-                            Tableau de Bord / <span className="text-white">{navItems.find(item => item.href === pathname)?.name || 'Accueil'}</span>
+                <header className="h-16 md:h-20 bg-gradient-to-r from-[#064e3b] to-[#0d9488] border-b border-emerald-900/50 flex items-center justify-between px-4 md:px-12 z-20 sticky top-0 shadow-lg shadow-emerald-950/20 gap-4">
+                    {/* Left: Mobile toggle + breadcrumb */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="lg:hidden shrink-0 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center text-lg font-bold transition-colors active:scale-95"
+                            aria-label="Menu"
+                        >
+                            {isSidebarOpen ? '✕' : '☰'}
+                        </button>
+                        <h2 className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em] truncate">
+                            <span className="hidden sm:inline">Tableau de Bord / </span>
+                            <span className="text-white">{navItems.find(item => item.href === pathname)?.name || 'Accueil'}</span>
                         </h2>
                     </div>
-                    <div className="hidden md:flex items-center gap-8 relative z-10">
+                    {/* Right: Status badges (desktop only) */}
+                    <div className="hidden md:flex items-center gap-6 shrink-0">
                         <div className="flex flex-col items-end leading-none">
                             <span className="text-[9px] font-black text-emerald-100/50 uppercase tracking-widest mb-1.5">Session 24-25</span>
                             <div className="px-3 py-1 bg-amber-400 rounded-full font-black text-[10px] text-[#064e3b] uppercase tracking-tighter shadow-lg shadow-amber-900/20">En cours</div>
@@ -158,7 +159,7 @@ export default function DashboardLayout({
                 </header>
 
                 {/* Content Container */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-12 scroll-smooth no-print">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 scroll-smooth no-print">
                     <div className="max-w-7xl mx-auto">
                         {children}
                     </div>
