@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
 import { Classe, Niveau } from '../../../lib/types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const NIVEAU_LABELS: Record<Niveau, string> = {
     [Niveau.SIXIEME]: '6ème',
@@ -15,6 +16,7 @@ const NIVEAU_LABELS: Record<Niveau, string> = {
 };
 
 export default function ClassesPage() {
+    const router = useRouter();
     const [classes, setClasses] = useState<Classe[]>([]);
     const [chargement, setChargement] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -111,12 +113,12 @@ export default function ClassesPage() {
                                 </div>
                             </div>
 
-                            <Link 
-                                href={`/dashboard/eleves?classeId=${classe.id}`}
-                                className="w-full mt-5 md:mt-6 py-3 md:py-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] hover:bg-[#020617] hover:text-white transition-all duration-500 active:scale-95 shadow-sm border border-slate-100 hover:border-transparent flex items-center justify-center"
+                            <button 
+                                onClick={() => router.push(`/dashboard/eleves?classeId=${classe.id}`)}
+                                className="w-full mt-5 md:mt-6 py-3 md:py-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] hover:bg-emerald-600 hover:text-white transition-all duration-500 active:scale-95 shadow-sm border border-slate-100 hover:border-transparent flex items-center justify-center cursor-pointer"
                             >
                                 Explorer la liste →
-                            </Link>
+                            </button>
                         </div>
                     ))
                 )}
