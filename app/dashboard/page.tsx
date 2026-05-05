@@ -3,17 +3,36 @@ import { useEffect, useState } from 'react';
 import { getUser } from '../../lib/auth';
 import { Role, Utilisateur } from '../../lib/types';
 import Link from 'next/link';
+import api from '../../lib/api';
 
 export default function DashboardHome() {
     const [user, setUser] = useState<Utilisateur | null>(null);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setUser(getUser());
-        setLoading(false);
+        const currentUser = getUser();
+        setUser(currentUser);
+        
+        const fetchStats = async () => {
+            try {
+                const res = await api.get('/dashboard/stats');
+                setStats(res.data);
+            } catch (err) {
+                console.error("Erreur stats:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
     }, []);
 
-    if (loading || !user) return null;
+    if (loading || !user) return (
+        <div className="flex items-center justify-center py-20">
+            <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin" />
+        </div>
+    );
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
@@ -27,9 +46,9 @@ export default function DashboardHome() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <StatCard title="Inscriptions Globales" value="124" icon="📝" color="emerald" />
-                <StatCard title="Paiements Confirmés" value="86" icon="💰" color="emerald" sub="38 en attente" />
-                <StatCard title="Dossiers Finalisés" value="42" icon="✅" color="emerald" sub="34% du total" />
+                <StatCard title="Inscriptions Globales" value={stats?.totalInscriptions || 0} icon="📝" color="emerald" />
+                <StatCard title="Paiements Confirmés" value={stats?.paiementsConfirmes || 0} icon="💰" color="emerald" sub={`${stats?.enAttentePaiement || 0} en attente`} />
+                <StatCard title="Dossiers Finalisés" value={stats?.dossiersFinalises || 0} icon="✅" color="emerald" sub={`${stats?.pourcentageFinalise || 0}% du total`} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -40,16 +59,22 @@ export default function DashboardHome() {
                         <Link href="/dashboard/inscriptions" className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">Consulter tout →</Link>
                     </div>
                     <div className="space-y-6">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm text-emerald-600">👤</div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">KOUASSI KOFFI</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Inscrit en 6ème 1 • Il y a 10 min</p>
+                        {stats?.recentActivity?.length > 0 ? (
+                            stats.recentActivity.map((act: any) => (
+                                <div key={act.id} className="flex items-center gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm text-emerald-600">👤</div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{act.nom}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Inscrit en {act.classe} • Dossier #{act.id}</p>
+                                    </div>
+                                    <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-wider">
+                                        {act.statut === 'FINALISEE' ? 'Terminé' : 'En cours'}
+                                    </span>
                                 </div>
-                                <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-wider">Initialisé</span>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p className="text-center py-10 text-slate-300 text-[10px] font-black uppercase tracking-widest">Aucune activité récente</p>
+                        )}
                     </div>
                 </div>
 
