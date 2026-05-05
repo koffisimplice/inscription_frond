@@ -17,6 +17,7 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
 
     // Camera & Mobile state
     const [showCamera, setShowCamera] = useState(false);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
     const [showQrCode, setShowQrCode] = useState(false);
     const [mobileUrl, setMobileUrl] = useState('');
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,9 +144,13 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
 
     const startCamera = async () => {
         setShowCamera(true);
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        }
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: facingMode }
             });
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
@@ -154,6 +159,27 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
         } catch (err) {
             setShowCamera(false);
             alert('Caméra indisponible. Vérifiez que vous avez autorisé l\'accès à la caméra dans votre navigateur.');
+        }
+    };
+
+    const toggleCamera = async () => {
+        const newMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(newMode);
+        
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: newMode }
+            });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+            }
+        } catch (err) {
+            console.error("Failed to switch camera", err);
         }
     };
 
@@ -362,9 +388,14 @@ export default function RegistrationForm({ initialData, isEdit = false }: { init
                                                     className="w-full h-full object-cover"
                                                 />
                                                 <div className="absolute bottom-4 inset-x-0 flex flex-col items-center gap-2 px-4">
-                                                    <button type="button" onClick={takePhoto} className="w-full bg-emerald-500 text-white py-2.5 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 active:scale-95 transition-all">
-                                                        📸 Capturer
-                                                    </button>
+                                                    <div className="flex gap-2 w-full">
+                                                        <button type="button" onClick={toggleCamera} className="bg-white/20 text-white p-2.5 rounded-xl backdrop-blur-md hover:bg-white/30 transition-all">
+                                                            🔄
+                                                        </button>
+                                                        <button type="button" onClick={takePhoto} className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 active:scale-95 transition-all">
+                                                            📸 Capturer
+                                                        </button>
+                                                    </div>
                                                     <button type="button" onClick={stopCamera} className="text-white text-[9px] uppercase font-black opacity-50 hover:opacity-100 transition-opacity">
                                                         Annuler
                                                     </button>

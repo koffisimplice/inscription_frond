@@ -8,17 +8,23 @@ export default function MobileCameraPage({ params }: { params: Promise<{ session
     const [erreur, setErreur] = useState('');
     const [statut, setStatut] = useState('Démarrage...');
     const [cameraDisponible, setCameraDisponible] = useState(true);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
     useEffect(() => {
         const startCamera = async () => {
+            if (videoRef.current?.srcObject) {
+                (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
+                    video: { facingMode: facingMode } 
                 });
                 if (videoRef.current) videoRef.current.srcObject = stream;
                 setStatut('');
                 setCameraDisponible(true);
-            } catch {
+            } catch (err) {
+                console.error("Camera error:", err);
                 setCameraDisponible(false);
                 setStatut('');
             }
@@ -29,7 +35,11 @@ export default function MobileCameraPage({ params }: { params: Promise<{ session
                 (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
             }
         };
-    }, []);
+    }, [facingMode]);
+
+    const toggleCamera = () => {
+        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    };
 
     const sendPhoto = async (photoUrl: string) => {
         setStatut('Envoi en cours...');
@@ -109,11 +119,25 @@ export default function MobileCameraPage({ params }: { params: Promise<{ session
                 <canvas ref={canvasRef} className="hidden" />
             </main>
 
-            <footer className="p-8 bg-zinc-900 flex flex-col items-center gap-4">
+            <footer className="p-8 bg-zinc-900 flex flex-col items-center gap-4 relative">
                 {cameraDisponible && (
-                    <button onClick={takePhoto} className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform">
-                        <div className="w-16 h-16 rounded-full border-2 border-zinc-800"></div>
-                    </button>
+                    <div className="flex items-center justify-center w-full">
+                        <div className="w-1/3 flex justify-center">
+                            <button 
+                                onClick={toggleCamera} 
+                                className="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center text-xl shadow-lg active:scale-90 transition-transform"
+                                title="Changer de caméra"
+                            >
+                                🔄
+                            </button>
+                        </div>
+                        <div className="w-1/3 flex justify-center">
+                            <button onClick={takePhoto} className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform">
+                                <div className="w-16 h-16 rounded-full border-2 border-zinc-800"></div>
+                            </button>
+                        </div>
+                        <div className="w-1/3"></div>
+                    </div>
                 )}
                 <p className="text-[10px] text-zinc-500 uppercase font-black">Prenez la photo de l'élève</p>
             </footer>
