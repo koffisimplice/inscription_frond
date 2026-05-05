@@ -1,10 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import api from '../../../lib/api';
 import { Eleve } from '../../../lib/types';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function ElevesPage() {
+    const searchParams = useSearchParams();
+    const classeIdFilter = searchParams.get('classeId');
     const [eleves, setEleves] = useState<Eleve[]>([]);
     const [chargement, setChargement] = useState(true);
     const [recherche, setRecherche] = useState('');
@@ -12,8 +15,20 @@ export default function ElevesPage() {
     useEffect(() => {
         const fetchEleves = async () => {
             try {
+                // Si on a un classeId, on peut filtrer côté API si le backend le supporte
+                // ou filtrer côté client. Ici on récupère tout et on filtrera.
                 const response = await api.get('/eleves');
-                setEleves(Array.isArray(response.data) ? response.data : []);
+                let data = Array.isArray(response.data) ? response.data : [];
+                
+                if (classeIdFilter) {
+                    data = data.filter((e: any) => 
+                        e.inscriptions && e.inscriptions.some((ins: any) => 
+                            ins.classe && ins.classe.id.toString() === classeIdFilter
+                        )
+                    );
+                }
+                
+                setEleves(data);
             } catch (error) {
                 console.error(error);
                 setEleves([]);
@@ -22,7 +37,7 @@ export default function ElevesPage() {
             }
         };
         fetchEleves();
-    }, []);
+    }, [classeIdFilter]);
 
     const elevesFiltrés = eleves.filter(e =>
         (e?.nom || '').toLowerCase().includes(recherche.toLowerCase()) ||

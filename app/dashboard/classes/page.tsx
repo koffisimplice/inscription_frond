@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
 import { Classe, Niveau } from '../../../lib/types';
+import Link from 'next/link';
 
 const NIVEAU_LABELS: Record<Niveau, string> = {
     [Niveau.SIXIEME]: '6ème',
@@ -93,10 +94,13 @@ export default function ClassesPage() {
                                 <div>
                                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-3">
                                         <span className="text-slate-400">Effectif Actuel</span>
-                                        <span className="text-amber-600">0 / {classe.capaciteMax}</span>
+                                        <span className="text-amber-600">{classe.effectifActuel || 0} / {classe.capaciteMax}</span>
                                     </div>
                                     <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-50">
-                                        <div className="h-full w-[2%] bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full" />
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all duration-1000" 
+                                            style={{ width: `${Math.min(100, ((classe.effectifActuel || 0) * 100) / (classe.capaciteMax || 1))}%` }}
+                                        />
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center py-4 border-t border-slate-50">
@@ -107,9 +111,12 @@ export default function ClassesPage() {
                                 </div>
                             </div>
 
-                            <button className="w-full mt-5 md:mt-6 py-3 md:py-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] hover:bg-[#020617] hover:text-white transition-all duration-500 active:scale-95 shadow-sm border border-slate-100 hover:border-transparent">
+                            <Link 
+                                href={`/dashboard/eleves?classeId=${classe.id}`}
+                                className="w-full mt-5 md:mt-6 py-3 md:py-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] hover:bg-[#020617] hover:text-white transition-all duration-500 active:scale-95 shadow-sm border border-slate-100 hover:border-transparent flex items-center justify-center"
+                            >
                                 Explorer la liste →
-                            </button>
+                            </Link>
                         </div>
                     ))
                 )}
