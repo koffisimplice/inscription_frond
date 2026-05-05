@@ -84,13 +84,16 @@ export default function ElevesPage() {
                                 <div className="mt-4 md:mt-6 grid grid-cols-2 gap-2">
                                     <Link
                                         href={`/dashboard/eleves/${eleve.id}`}
-                                        className="py-2 md:py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95"
+                                        className="py-2 md:py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95 text-center"
                                     >
                                         Profil
                                     </Link>
-                                    <button className="py-2 md:py-2.5 bg-slate-50 text-slate-500 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95">
+                                    <Link
+                                        href={`/dashboard/inscriptions/nouvelle?editEleveId=${eleve.id}`}
+                                        className="py-2 md:py-2.5 bg-slate-50 text-slate-500 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest hover:bg-emerald-900 hover:text-white transition-all active:scale-95 text-center"
+                                    >
                                         Éditer
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
